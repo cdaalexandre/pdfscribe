@@ -31,6 +31,7 @@ SHEET_UNKNOWN = "?"
 _ENV_MIN_OCR_CONFIDENCE = "PDFSCRIBE_MIN_OCR_CONFIDENCE"
 _ENV_MAX_GARBAGE_RATIO = "PDFSCRIBE_MAX_GARBAGE_RATIO"
 _ENV_MIN_WORD_RATIO = "PDFSCRIBE_MIN_WORD_RATIO"
+_ENV_MIXED_INK_RATIO = "PDFSCRIBE_MIXED_INK_RATIO"
 
 # Brazilian court files stamp a sheet number on every page: 'fls. 1234',
 # 'fl. 12', 'Folha 7'. The page number in the PDF and the sheet number in
@@ -49,10 +50,16 @@ _STAMP_LINE_RE = re.compile(
 
 
 class PageSource(StrEnum):
-    """Where the text of a transcribed page came from."""
+    """Where the text of a transcribed page came from.
+
+    MIXED is for a page that carries both: a native text layer worth
+    keeping literally, plus marks the text layer does not explain and
+    only OCR can read.
+    """
 
     NATIVE = "nativo"
     OCR = "ocr"
+    MIXED = "misto"
     EMPTY = "vazia"
 
 
@@ -68,11 +75,17 @@ class FidelityThresholds:
             (a font with no ToUnicode map yields chars that are not text).
         min_word_ratio: Below this share of word-shaped tokens, a native
             text layer is treated as broken.
+        mixed_ink_ratio: At or above this share of the page covered by
+            marks the text layer does not explain, a page that also has
+            native text is read both ways. Measured on a real filing:
+            text pages sat between 0% and 12%, scanned pages between
+            27% and 84%.
     """
 
     min_ocr_confidence: float = 0.80
     max_garbage_ratio: float = 0.30
     min_word_ratio: float = 0.50
+    mixed_ink_ratio: float = 0.20
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> FidelityThresholds:
@@ -92,6 +105,7 @@ class FidelityThresholds:
             min_ocr_confidence=_read_float(source, _ENV_MIN_OCR_CONFIDENCE, cls.min_ocr_confidence),
             max_garbage_ratio=_read_float(source, _ENV_MAX_GARBAGE_RATIO, cls.max_garbage_ratio),
             min_word_ratio=_read_float(source, _ENV_MIN_WORD_RATIO, cls.min_word_ratio),
+            mixed_ink_ratio=_read_float(source, _ENV_MIXED_INK_RATIO, cls.mixed_ink_ratio),
         )
 
 
@@ -174,9 +188,10 @@ def find_sheet_number(text: str) -> str | None:
 def is_low_confidence(mark: PageMark, thresholds: FidelityThresholds | None = None) -> bool:
     """Report whether an OCR page fell below the confidence threshold.
 
-    Only OCR pages can be low confidence. A native page is 1.0 by
-    construction and an empty page is 0.0 with nothing to trust or
-    distrust, so neither is ever flagged.
+    Only a page whose text was read from an image can be low confidence,
+    which means OCR pages and the OCR half of mixed pages. A native page
+    is 1.0 by construction and an empty page is 0.0 with nothing to
+    trust or distrust, so neither is ever flagged.
 
     Args:
         mark: The page marker under test.
@@ -186,7 +201,8 @@ def is_low_confidence(mark: PageMark, thresholds: FidelityThresholds | None = No
         True when the page came from OCR and scored below the threshold.
     """
     limits = thresholds if thresholds is not None else FidelityThresholds()
-    return mark.source is PageSource.OCR and mark.confidence < limits.min_ocr_confidence
+    reads_an_image = mark.source in (PageSource.OCR, PageSource.MIXED)
+    return reads_an_image and mark.confidence < limits.min_ocr_confidence
 
 
 def format_marker(mark: PageMark, thresholds: FidelityThresholds | None = None) -> str:
