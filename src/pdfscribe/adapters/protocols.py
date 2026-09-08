@@ -12,6 +12,10 @@ docslice counterpart uses. The page loop and the page count come from
 the same document and have to agree: comparing them is how the
 no-page-is-lost invariant of the fidelity contract is enforced, so both
 belong to the same port.
+
+Rendering and recognition are two ports, not one, because they fail for
+unrelated reasons: a page can be rendered on any machine, while
+recognition needs a binary installed outside pip.
 """
 
 from __future__ import annotations
@@ -22,6 +26,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
 
+    from pdfscribe.domain.ocr import OcrOutcome
     from pdfscribe.domain.transcript import RawPage
 
 
@@ -34,6 +39,22 @@ class TextExtractor(Protocol):
 
     def pages(self, path: Path) -> Iterator[RawPage]:
         """Yield one RawPage per page, in document order, starting at 1."""
+        ...
+
+
+class PageRasterizer(Protocol):
+    """Interface for drawing a page as a bitmap."""
+
+    def render(self, path: Path, number: int, dpi: int) -> bytes:
+        """Render page `number` at `dpi` and return it as PNG bytes."""
+        ...
+
+
+class OcrEngine(Protocol):
+    """Interface for recognizing text on a rendered page."""
+
+    def read(self, image: bytes, lang: str) -> OcrOutcome:
+        """Recognize PNG bytes in `lang`, reporting mean confidence."""
         ...
 
 

@@ -5,23 +5,23 @@ Fundamentacao: Percival & Gregory, Architecture Patterns, Cap. 2.g.
 
 Deliberately smaller than the docslice PDF adapter. docslice asks
 pymupdf4llm for a structured Markdown rendering of the whole document;
-this adapter asks pymupdf for the raw text of one page and returns it
-unchanged. Structure is interpretation, and interpretation is what the
-fidelity contract forbids by default.
+this adapter asks for the raw text of one page and returns it unchanged.
+Structure is interpretation, and interpretation is what the fidelity
+contract forbids by default.
 
 The text layer is returned exactly as MuPDF reports it, including
 hyphenation, repeated headers, folio stamps and mojibake. Deciding that
-a text layer is broken is the classifier's job (PR2), not the reader's.
+a text layer is broken is the classifier's job, not the reader's.
 
-Isolated I/O: swapping PyMuPDF for another engine changes only this file.
+Isolated I/O: swapping the PDF engine changes only this file and its
+sibling pdf_document.
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-import pymupdf
-
+from pdfscribe.adapters.pdf_document import open_document
 from pdfscribe.domain.transcript import RawPage
 from pdfscribe.log import get_logger
 
@@ -32,30 +32,6 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 _PROGRESS_EVERY = 500
-
-
-def _open_document(path: Path) -> Any:
-    """Open a PDF with pymupdf, or fail with a clear message.
-
-    Args:
-        path: Path to the PDF file.
-
-    Returns:
-        The open pymupdf document. pymupdf ships no type stubs, so the return
-        type is Any by necessity and is narrowed at every use site.
-
-    Raises:
-        FileNotFoundError: If path does not exist.
-        RuntimeError: If pymupdf cannot open the file.
-    """
-    if not path.exists():
-        msg = f"PDF file not found: {path}"
-        raise FileNotFoundError(msg)
-    try:
-        return pymupdf.open(str(path))
-    except Exception as exc:
-        msg = f"Cannot open PDF: {path}"
-        raise RuntimeError(msg) from exc
 
 
 class PdfTextReader:
@@ -72,9 +48,9 @@ class PdfTextReader:
 
         Raises:
             FileNotFoundError: If path does not exist.
-            RuntimeError: If pymupdf cannot open the file.
+            RuntimeError: If the file cannot be opened.
         """
-        doc = _open_document(path)
+        doc = open_document(path)
         try:
             return int(doc.page_count)
         finally:
@@ -93,9 +69,9 @@ class PdfTextReader:
 
         Raises:
             FileNotFoundError: If path does not exist.
-            RuntimeError: If pymupdf cannot open the file.
+            RuntimeError: If the file cannot be opened.
         """
-        doc = _open_document(path)
+        doc = open_document(path)
         try:
             total = int(doc.page_count)
             logger.info("Reading native text: %d pages in %s", total, path.name)

@@ -63,7 +63,7 @@ show_missing = true
 skip_empty = true
 
 [[tool.mypy.overrides]]
-module = ["pymupdf"]
+module = ["pymupdf", "pytesseract", "PIL", "PIL.Image"]
 # PyMuPDF 1.28 ships py.typed but leaves its own functions unannotated,
 # so strict mypy rejects every call with no-untyped-call. Skipping the
 # import restores the Any the library had under its old `fitz` name and
