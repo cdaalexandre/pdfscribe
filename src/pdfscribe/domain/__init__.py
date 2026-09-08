@@ -28,6 +28,7 @@ from pdfscribe.domain.page_classifier import (  # noqa: F401
 )
 from pdfscribe.domain.transcript import (  # noqa: F401
     RawPage,
+    build_mark,
     has_characters,
     mark_native_page,
     render_page,
@@ -44,6 +45,7 @@ __all__ = [
     "RawPage",
     "RenderSettings",
     "build_frame",
+    "build_mark",
     "classify_page",
     "find_sheet_number",
     "format_marker",
