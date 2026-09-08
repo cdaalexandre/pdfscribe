@@ -17,6 +17,7 @@ from pathlib import Path
 from pdfscribe import __version__
 from pdfscribe.adapters.tesseract_ocr import MISSING_BINARY, tesseract_path
 from pdfscribe.domain.ocr import RenderSettings
+from pdfscribe.domain.splitter import SplitSettings
 from pdfscribe.log import get_logger, setup_logging
 from pdfscribe.service_layer.transcriber import transcribe
 
@@ -49,6 +50,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="tesseract language code, such as por or por+eng (default: por).",
     )
     parser.add_argument(
+        "--max-bytes",
+        type=int,
+        default=None,
+        help="Ceiling for one part of the transcript (default: 3 MB).",
+    )
+    parser.add_argument(
         "--no-ocr",
         action="store_true",
         help="Skip recognition. Pages needing it are still marked.",
@@ -69,7 +76,7 @@ def _default_output(input_path: Path) -> Path:
     return input_path.parent / f"{stem}_transcript" / f"{stem}.md"
 
 
-def _settings(args: argparse.Namespace) -> RenderSettings:
+def _render_settings(args: argparse.Namespace) -> RenderSettings:
     """Build render settings from the environment, then the flags.
 
     Raises:
@@ -80,6 +87,18 @@ def _settings(args: argparse.Namespace) -> RenderSettings:
         dpi=args.dpi if args.dpi is not None else base.dpi,
         lang=args.lang if args.lang is not None else base.lang,
     )
+
+
+def _split_settings(args: argparse.Namespace) -> SplitSettings:
+    """Build split settings from the environment, then the flags.
+
+    Raises:
+        ValueError: If the ceiling is below the minimum.
+    """
+    base = SplitSettings.from_env()
+    if args.max_bytes is None:
+        return base
+    return SplitSettings(max_bytes=args.max_bytes)
 
 
 def main() -> None:
@@ -93,7 +112,8 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        settings = _settings(args)
+        render = _render_settings(args)
+        split = _split_settings(args)
     except ValueError as exc:
         logger.error("Invalid settings: %s", exc)
         sys.exit(1)
@@ -112,7 +132,8 @@ def main() -> None:
             output_path,
             dry_run=args.dry_run,
             use_ocr=not args.no_ocr,
-            settings=settings,
+            settings=render,
+            split=split,
         )
     except (FileNotFoundError, RuntimeError, ValueError) as exc:
         logger.error("Transcription failed: %s", exc)
@@ -134,8 +155,10 @@ def main() -> None:
     if not result.ocr_ran and (result.ocr_pages or result.mixed_pages):
         logger.info("OCR did not run: %d page(s) carry no recognized text", result.ocr_pages)
 
-    logger.info("Transcript size: %d bytes", result.output_bytes)
+    logger.info("Transcript size: %d bytes in %d part(s)", result.output_bytes, result.parts)
     if result.written:
-        logger.info("Wrote %s", result.output_path)
+        for name in result.part_names:
+            logger.info("Wrote %s", output_path.with_name(name))
+        logger.info("Wrote %s", result.log_path)
     else:
         logger.info("Dry run: nothing written. Target would be %s", result.output_path)

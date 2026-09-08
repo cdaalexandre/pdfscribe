@@ -26,6 +26,17 @@ from pdfscribe.domain.page_classifier import (  # noqa: F401
     classify_page,
     garbage_ratio,
 )
+from pdfscribe.domain.run_log import (  # noqa: F401
+    PageRecord,
+    format_log,
+    record_of,
+)
+from pdfscribe.domain.splitter import (  # noqa: F401
+    SplitSettings,
+    part_filename,
+    plan_parts,
+    starts_new_part,
+)
 from pdfscribe.domain.transcript import (  # noqa: F401
     RawPage,
     build_mark,
@@ -41,13 +52,16 @@ __all__ = [
     "OcrOutcome",
     "PageFrame",
     "PageMark",
+    "PageRecord",
     "PageSource",
     "RawPage",
     "RenderSettings",
+    "SplitSettings",
     "build_frame",
     "build_mark",
     "classify_page",
     "find_sheet_number",
+    "format_log",
     "format_marker",
     "garbage_ratio",
     "has_characters",
@@ -55,5 +69,9 @@ __all__ = [
     "line_signature",
     "mark_native_page",
     "mean_confidence",
+    "part_filename",
+    "plan_parts",
+    "record_of",
     "render_page",
+    "starts_new_part",
 ]
