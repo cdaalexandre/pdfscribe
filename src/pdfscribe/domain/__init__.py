@@ -12,6 +12,12 @@ from pdfscribe.domain.fidelity import (  # noqa: F401
     format_marker,
     is_low_confidence,
 )
+from pdfscribe.domain.transcript import (  # noqa: F401
+    RawPage,
+    has_characters,
+    mark_native_page,
+    render_page,
+)
 
 __all__ = [
     "LOW_CONFIDENCE_MARK",
@@ -19,7 +25,11 @@ __all__ = [
     "FidelityThresholds",
     "PageMark",
     "PageSource",
+    "RawPage",
     "find_sheet_number",
     "format_marker",
+    "has_characters",
     "is_low_confidence",
+    "mark_native_page",
+    "render_page",
 ]

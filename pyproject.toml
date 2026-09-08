@@ -61,3 +61,7 @@ source = ["src/pdfscribe"]
 [tool.coverage.report]
 show_missing = true
 skip_empty = true
+
+[[tool.mypy.overrides]]
+module = ["fitz"]
+ignore_missing_imports = true
