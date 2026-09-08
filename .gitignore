@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing / Coverage
+.coverage
+htmlcov/
+coverage.xml
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# ruff
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Helper scripts executed from Downloads
+_bootstrap*.py
+_fix*.py
+_create*.py
+_dump*.py
+_review_dump.txt
+
+# Project artifacts
+*.log
+*_transcript/
+*_output/
+
+# Source and sample documents are never committed
+*.pdf

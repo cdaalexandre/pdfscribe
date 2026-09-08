@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdfscribe"]
+
+[project]
+name = "pdfscribe"
+version = "0.1.0"
+description = "Faithful page-by-page PDF transcription: native text or OCR, with provenance."
+requires-python = ">= 3.11"
+license = "MIT"
+dependencies = [
+    "PyMuPDF>=1.24",
+    "pytesseract>=0.3.10",
+    "Pillow>=10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pytest>=7",
+    "pytest-cov>=5",
+]
+
+[project.scripts]
+pdfscribe = "pdfscribe.entrypoints.cli:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "PT", "SIM", "TCH", "D"]
+ignore = ["D100", "D104"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D101", "D102", "D103", "D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+strict = true
+disallow_untyped_defs = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/pdfscribe"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true

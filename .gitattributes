@@ -1,0 +1,2 @@
+# Force LF line endings on all text files (RAM Cap. 4).
+* text=auto eol=lf
