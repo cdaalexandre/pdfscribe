@@ -1,11 +1,11 @@
-"""Adapter - read a PDF page by page via fitz (PyMuPDF), text untouched.
+"""Adapter - read a PDF page by page via PyMuPDF, text untouched.
 
 Fundamentacao: Percival & Gregory, Architecture Patterns, Cap. 2.g.
 'What Is a Port and What Is an Adapter, in Python?'
 
 Deliberately smaller than the docslice PDF adapter. docslice asks
 pymupdf4llm for a structured Markdown rendering of the whole document;
-this adapter asks fitz for the raw text of one page and returns it
+this adapter asks pymupdf for the raw text of one page and returns it
 unchanged. Structure is interpretation, and interpretation is what the
 fidelity contract forbids by default.
 
@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import fitz
+import pymupdf
 
 from pdfscribe.domain.transcript import RawPage
 from pdfscribe.log import get_logger
@@ -35,24 +35,24 @@ _PROGRESS_EVERY = 500
 
 
 def _open_document(path: Path) -> Any:
-    """Open a PDF with fitz, or fail with a clear message.
+    """Open a PDF with pymupdf, or fail with a clear message.
 
     Args:
         path: Path to the PDF file.
 
     Returns:
-        The open fitz document. fitz ships no type stubs, so the return
+        The open pymupdf document. pymupdf ships no type stubs, so the return
         type is Any by necessity and is narrowed at every use site.
 
     Raises:
         FileNotFoundError: If path does not exist.
-        RuntimeError: If fitz cannot open the file.
+        RuntimeError: If pymupdf cannot open the file.
     """
     if not path.exists():
         msg = f"PDF file not found: {path}"
         raise FileNotFoundError(msg)
     try:
-        return fitz.open(str(path))
+        return pymupdf.open(str(path))
     except Exception as exc:
         msg = f"Cannot open PDF: {path}"
         raise RuntimeError(msg) from exc
@@ -72,7 +72,7 @@ class PdfTextReader:
 
         Raises:
             FileNotFoundError: If path does not exist.
-            RuntimeError: If fitz cannot open the file.
+            RuntimeError: If pymupdf cannot open the file.
         """
         doc = _open_document(path)
         try:
@@ -93,7 +93,7 @@ class PdfTextReader:
 
         Raises:
             FileNotFoundError: If path does not exist.
-            RuntimeError: If fitz cannot open the file.
+            RuntimeError: If pymupdf cannot open the file.
         """
         doc = _open_document(path)
         try:

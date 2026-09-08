@@ -36,8 +36,14 @@ _ENV_MIN_WORD_RATIO = "PDFSCRIBE_MIN_WORD_RATIO"
 # 'fl. 12', 'Folha 7'. The page number in the PDF and the sheet number in
 # the case file diverge whenever a volume is split or a document is
 # appended, so both are recorded and neither is inferred from the other.
-_SHEET_RE = re.compile(
-    r"\bf(?:ls?|olhas?)\b\.?\s*(?:n?[.\u00ba\u00b0]?\s*)?(\d{1,6})\b",
+#
+# The stamp owns its line. Anything sharing a line with other text is a
+# cross-reference to a different page - '(fls. 407-410)', 'de fls.
+# 540/541, sendo' - and recording it as this page's sheet would be an
+# invented fact. Anchoring the pattern to the whole line is what
+# separates the two; see find_sheet_number for the measurement.
+_STAMP_LINE_RE = re.compile(
+    r"^f(?:ls?|olhas?)\b\.?\s*(?:n?[.\u00ba\u00b0]?\s*)?(\d{1,6})$",
     re.IGNORECASE,
 )
 
@@ -136,23 +142,33 @@ def _read_float(env: Mapping[str, str], key: str, default: float) -> float:
 def find_sheet_number(text: str) -> str | None:
     """Find the sheet number stamped on a page of a court file.
 
-    Matches the usual Brazilian abbreviations - 'fl.', 'fls.', 'folha',
-    'folhas' - followed by digits. The first match in the page wins,
-    because the stamp appears in the header or footer while later
-    occurrences are cross-references inside the text.
+    A stamp occupies a line of its own. A mention inside a sentence
+    points at some other page and is never this page's sheet.
+
+    Measured against a real TJSP filing of 81 pages: taking the first
+    match anywhere on the page got 51 right, because references appear
+    before the stamp in reading order. Requiring a whole line, and
+    keeping the last such line, is what separates stamp from reference.
+
+    When no line holds a stamp alone the answer is None. For a
+    transcription an honest '?' beats an invented number.
 
     Args:
         text: Full text of a single page, as transcribed.
 
     Returns:
-        The digits of the sheet number, or None when the page shows none.
+        The digits of the sheet number exactly as stamped, zero padding
+        included, or None when the page shows no stamp.
     """
-    match = _SHEET_RE.search(text)
-    if match is None:
-        return None
-    # str() wrap: Match.group is typed str | Any in typeshed; the cast
-    # narrows it without a `# type: ignore` under warn_return_any.
-    return str(match.group(1))
+    found: str | None = None
+    for line in text.splitlines():
+        match = _STAMP_LINE_RE.match(line.strip())
+        if match is not None:
+            # str() wrap: Match.group is typed str | Any in typeshed; the
+            # cast narrows it without a `# type: ignore` under
+            # warn_return_any.
+            found = str(match.group(1))
+    return found
 
 
 def is_low_confidence(mark: PageMark, thresholds: FidelityThresholds | None = None) -> bool:

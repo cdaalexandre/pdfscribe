@@ -36,7 +36,7 @@ Hexagonal (ports and adapters), after Percival & Gregory.
 
 ```
 src/pdfscribe/
-| adapters/         # I/O boundaries: fitz reader, rasterizer, tesseract, file writer
+| adapters/         # I/O boundaries: PyMuPDF reader, rasterizer, tesseract, writer
 | domain/           # Pure logic: page classification, fidelity markers, splitter
 | service_layer/    # Orchestration: read -> classify -> extract|ocr -> mark -> write
 | entrypoints/      # argparse CLI

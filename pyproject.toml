@@ -12,7 +12,7 @@ description = "Faithful page-by-page PDF transcription: native text or OCR, with
 requires-python = ">= 3.11"
 license = "MIT"
 dependencies = [
-    "PyMuPDF>=1.24",
+    "PyMuPDF>=1.24.3",
     "pytesseract>=0.3.10",
     "Pillow>=10.0",
 ]
@@ -63,5 +63,10 @@ show_missing = true
 skip_empty = true
 
 [[tool.mypy.overrides]]
-module = ["fitz"]
+module = ["pymupdf"]
+# PyMuPDF 1.28 ships py.typed but leaves its own functions unannotated,
+# so strict mypy rejects every call with no-untyped-call. Skipping the
+# import restores the Any the library had under its old `fitz` name and
+# keeps the adapter module itself strict.
+follow_imports = "skip"
 ignore_missing_imports = true

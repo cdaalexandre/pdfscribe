@@ -1,4 +1,4 @@
-"""Tests - pdf_text_reader adapter, integration with a real fitz PDF.
+"""Tests - pdf_text_reader adapter, integration with a real PyMuPDF document.
 
 Percival & Gregory, Architecture Patterns, Cap. 5:
 'Integration tests exercise the adapter against the real dependency,
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import fitz
+import pymupdf
 import pytest
 
 from pdfscribe.adapters.pdf_text_reader import PdfTextReader
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 def _make_pdf(path: Path, pages: int, *, blank_last: bool = False) -> None:
     """Build a minimal multi-page PDF at path for testing."""
-    doc = fitz.open()
+    doc = pymupdf.open()
     for n in range(pages):
         page = doc.new_page()
         is_blank = blank_last and n == pages - 1

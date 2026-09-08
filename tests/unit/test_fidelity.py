@@ -68,23 +68,47 @@ class TestPageMark:
 
 
 class TestFindSheetNumber:
-    """Tests for the sheet-number regex over page text."""
+    """Tests for the folio stamp rule.
 
-    def test_finds_abbreviated_plural(self) -> None:
-        assert find_sheet_number("Autos n. 123 - fls. 1234\nDespacho") == "1234"
+    Calibrated against a real TJSP filing: the stamp owns its line and
+    sits at the foot of the page, while every mention inside a sentence
+    points at some other page. The reference cases below are shortened
+    from that document.
+    """
+
+    def test_finds_a_stamp_alone_on_its_line(self) -> None:
+        assert find_sheet_number("Despacho do juizo\n\nfls. 4") == "4"
 
     def test_finds_abbreviated_singular(self) -> None:
         assert find_sheet_number("fl. 12") == "12"
 
     def test_finds_full_word(self) -> None:
-        assert find_sheet_number("Folha 7 do processo") == "7"
+        assert find_sheet_number("folha 7") == "7"
 
     def test_is_case_insensitive(self) -> None:
         assert find_sheet_number("FLS. 88") == "88"
 
-    def test_first_occurrence_wins(self) -> None:
-        # The stamp is in the header; later mentions are cross-references.
-        assert find_sheet_number("fls. 10\ncomo se ve a fls. 99") == "10"
+    def test_tolerates_surrounding_whitespace(self) -> None:
+        assert find_sheet_number("corpo\n   fls. 9   \n") == "9"
+
+    def test_keeps_zero_padding_verbatim(self) -> None:
+        assert find_sheet_number("corpo\nfls. 05") == "05"
+
+    def test_ignores_a_reference_inside_a_sentence(self) -> None:
+        assert find_sheet_number("de fls. 540/541, sendo nomeado inventariante.") is None
+
+    def test_ignores_a_reference_in_parentheses(self) -> None:
+        assert find_sheet_number("juntado aos autos (fls. 400-412), que concluiu") is None
+
+    def test_ignores_a_page_range_alone_on_a_line(self) -> None:
+        assert find_sheet_number("fls. 407-410") is None
+
+    def test_reference_loses_to_the_stamp(self) -> None:
+        page = "as fls. 17 dos autos do inventario\ncorpo\nfls. 4"
+        assert find_sheet_number(page) == "4"
+
+    def test_last_stamp_wins(self) -> None:
+        assert find_sheet_number("fls. 3\ncorpo\nfls. 4") == "4"
 
     def test_returns_none_without_stamp(self) -> None:
         assert find_sheet_number("Pagina de texto corrido, sem carimbo.") is None
